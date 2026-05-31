@@ -1,6 +1,6 @@
 {
   "domain": "alpicool_ble",
-  "name": "Alpicool BLE",
+  "name": "Bodega BLE",
   "config_flow": true,
   "documentation": "https://github.com/Gruni22/alpicool_ha_ble",
   "iot_class": "local_polling",

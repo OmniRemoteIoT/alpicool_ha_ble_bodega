@@ -1,6 +1,6 @@
-# Alpicool, BrassMonkey, Ocean Comfort, Bodega, ... 12V/24V BLE Fridge Integration for Home Assistant
+# Bodega 12V/24V BLE Fridge Integration for Home Assistant
 
-This is a Home Assistant Custom Component to control Alpicool, BrassMonkey, Ocean Comfort, Bodega, or other compatible portable fridges via Bluetooth Low Energy (BLE).
+This is a Home Assistant Custom Component to control **Bodega** RV/portable fridges via Bluetooth Low Energy (BLE). Because Bodega is a rebadge of the Alpicool OEM platform, it also works with other compatible fridges sharing the same protocol (Alpicool, BrassMonkey, Ocean Comfort, BougeRV, Euhomy, Setpower, JoyTutus, and similar).
 
 This integration creates multiple entities in Home Assistant, allowing you to monitor and control all known aspects of your fridge.
 
@@ -50,7 +50,7 @@ Easiest install is via [HACS](https://hacs.xyz/):
 
 ### Method 1: HACS (Recommended)
 1.  [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OmniRemoteIoT&repository=alpicool_ha_ble_bodega&category=integration)
-4.  Search for "Alpicool BLE" and click "Install".
+4.  Search for "Bodega BLE" and click "Install".
 5.  Restart Home Assistant.
 
 ### Method 2: Manual Installation
@@ -65,7 +65,7 @@ Configuration is done via the Home Assistant UI.
 
 1.  Navigate to **Settings > Devices & Services**.
 2.  Home Assistant should automatically discover your fridge if it is powered on and nearby. If so, click **Configure** on the discovered device card.
-3.  If it's not discovered automatically, click **Add Integration**, search for "Alpicool BLE", and follow the prompts to select your device.
+3.  If it's not discovered automatically, click **Add Integration**, search for "Bodega BLE", and follow the prompts to select your device.
 4.  Select "dual_zone_modes" if your freezer has a Freezer or Fridge Mode. This will disable seperate controls, when the device is in fridge mode.
 5.  Press the pairing button on the fridge, if "APP" is written on the display.
 
