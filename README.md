@@ -1,10 +1,25 @@
-# Alpicool, BrassMonkey, Ocean Comfort, ... 12V/24V BLE Fridge Integration for Home Assistant
+# Alpicool, BrassMonkey, Ocean Comfort, Bodega, ... 12V/24V BLE Fridge Integration for Home Assistant
 
-This is a Home Assistant Custom Component to control Alpicool, BrassMonkey, Ocean Comfort, or other compatible portable fridges via Bluetooth Low Energy (BLE).
+This is a Home Assistant Custom Component to control Alpicool, BrassMonkey, Ocean Comfort, Bodega, or other compatible portable fridges via Bluetooth Low Energy (BLE).
 
 This integration creates multiple entities in Home Assistant, allowing you to monitor and control all known aspects of your fridge.
 
 This component was inspired by the prior work done by klightspeed's [BrassMonkeyFridgeMonitor](https://github.com/klightspeed/BrassMonkeyFridgeMonitor).
+
+***
+## About this fork
+
+This is a fork of [`Gruni22/alpicool_ha_ble`](https://github.com/Gruni22/alpicool_ha_ble), extended to work cleanly on a **Bodega**-branded RV fridge that shares the underlying Alpicool BLE protocol. Bodega is one of several rebadges of the same OEM platform (others include BougeRV, Euhomy, Setpower, JoyTutus), so these changes apply broadly to fridges in that family. All credit for the original integration goes to upstream — full upstream functionality is preserved.
+
+Tested on a **Bodega 83L dual-zone** fridge/freezer (`PSP-CR65-AK` main board).
+
+What this fork adds on top of upstream:
+
+* **Correct temperatures in °F mode (bugfix).** The BLE status payload reports temperatures in whatever unit the fridge panel is currently set to, and byte 9 is the unit flag (`0` = °C, `1` = °F). Upstream decoded that flag but never acted on it, so a fridge in °F mode reported wrong values (raw `4`°F was published as `4`°C and displayed as `39`°F). The climate entity now exposes its temperature unit, min, and max dynamically from the device, letting Home Assistant handle any display conversion natively with no round-trip precision loss.
+* **Configurable zone names.** Rename the Left/Right zones to anything meaningful (e.g. Refrigerator/Freezer, Top/Bottom).
+* **External temperature sensors per zone.** Feed each zone's `current_temperature` from any HA temperature sensor (Ruuvi, Govee, etc.) instead of the fridge's internal NTC.
+
+See [Fork Options](#fork-options-zone-names--external-sensors) below for usage.
 
 ## Features & Supported Entities
 
@@ -54,6 +69,27 @@ Configuration is done via the Home Assistant UI.
 3.  If it's not discovered automatically, click **Add Integration**, search for "Alpicool BLE", and follow the prompts to select your device.
 4.  Select "dual_zone_modes" if your freezer has a Freezer or Fridge Mode. This will disable seperate controls, when the device is in fridge mode.
 5.  Press the pairing button on the fridge, if "APP" is written on the display.
+
+***
+## Fork Options: Zone Names & External Sensors
+
+These options are added by this fork. After the integration is set up, click **Configure** on the integration card (**Settings > Devices & Services**) to open the options dialog. Changes take effect immediately — no Home Assistant restart needed.
+
+### Zone display names
+
+Free-form text fields let you relabel the Left and Right zones to whatever makes sense for your fridge (e.g. `Refrigerator` / `Freezer`, `Top` / `Bottom`). The internal zone identifiers and entity unique IDs are left unchanged, so renaming preserves all existing entity history. On single-zone fridges only the Left field is shown.
+
+### External temperature sensors
+
+Each zone can optionally read its `current_temperature` from any Home Assistant sensor with `device_class: temperature`, instead of the fridge's internal NTC thermistor. This is useful if you have a more accurate sensor (a Ruuvi tag, Govee, etc.) physically inside the cabinet. Pick a sensor per zone from the dropdown; clearing the field reverts to the fridge's internal sensor.
+
+Notes:
+* If the external sensor and the fridge report different units, Home Assistant converts automatically — a °C-reporting Ruuvi works fine even when the fridge is set to °F mode, and vice versa.
+* If the external sensor becomes `unavailable`/`unknown` or reports non-numeric data, the zone falls back to the fridge's internal reading.
+* The climate card refreshes the moment the external sensor updates, rather than waiting for the next BLE poll.
+* **This affects display/monitoring only.** The fridge's compressor still cycles off its own internal thermistor; the external sensor does not change how the fridge regulates temperature.
+
+If your sensor doesn't appear in the picker, confirm it has `device_class: temperature` set (check **Developer Tools > States**). Sensors sourced from some integrations may need this added via `customize:` in `configuration.yaml`.
 
 ***
 ## Technical Details & Protocol Quirks
