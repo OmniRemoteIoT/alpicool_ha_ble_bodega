@@ -8,10 +8,26 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.core import callback
+from homeassistant.helpers import selector
 
-from .const import CONF_DUAL_ZONE_MODES, DOMAIN
+from .const import (
+    CONF_DUAL_ZONE_MODES,
+    CONF_LEFT_EXTERNAL_TEMP_SENSOR,
+    CONF_LEFT_ZONE_NAME,
+    CONF_RIGHT_EXTERNAL_TEMP_SENSOR,
+    CONF_RIGHT_ZONE_NAME,
+    DEFAULT_LEFT_ZONE_NAME,
+    DEFAULT_RIGHT_ZONE_NAME,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +48,12 @@ class AlpicoolConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        """Return the options flow handler."""
+        return AlpicoolOptionsFlow(config_entry)
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -61,19 +83,27 @@ class AlpicoolConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "invalid_address"
                 else:
                     name = user_input.get(CONF_NAME, normalized_address)
-                await self.async_set_unique_id(normalized_address)
-                self._abort_if_unique_id_configured()
+                    await self.async_set_unique_id(normalized_address)
+                    self._abort_if_unique_id_configured()
 
-                return self.async_create_entry(
-                    title=name,
-                    data={
-                        CONF_ADDRESS: normalized_address,
-                        CONF_NAME: name,
-                        CONF_DUAL_ZONE_MODES: user_input.get(
-                            CONF_DUAL_ZONE_MODES, False
-                        ),
-                    },
-                )
+                    return self.async_create_entry(
+                        title=name,
+                        data={
+                            CONF_ADDRESS: normalized_address,
+                            CONF_NAME: name,
+                            CONF_DUAL_ZONE_MODES: user_input.get(
+                                CONF_DUAL_ZONE_MODES, False
+                            ),
+                        },
+                        options={
+                            CONF_LEFT_ZONE_NAME: user_input.get(
+                                CONF_LEFT_ZONE_NAME, DEFAULT_LEFT_ZONE_NAME
+                            ),
+                            CONF_RIGHT_ZONE_NAME: user_input.get(
+                                CONF_RIGHT_ZONE_NAME, DEFAULT_RIGHT_ZONE_NAME
+                            ),
+                        },
+                    )
 
         default_name = (
             self._discovery_info.name if self._discovery_info else "Alpicool Fridge"
@@ -85,6 +115,12 @@ class AlpicoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_ADDRESS, default=default_address): str,
                 vol.Optional(CONF_NAME, default=default_name): str,
                 vol.Optional(CONF_DUAL_ZONE_MODES, default=False): bool,
+                vol.Optional(
+                    CONF_LEFT_ZONE_NAME, default=DEFAULT_LEFT_ZONE_NAME
+                ): str,
+                vol.Optional(
+                    CONF_RIGHT_ZONE_NAME, default=DEFAULT_RIGHT_ZONE_NAME
+                ): str,
             }
         )
 
@@ -92,4 +128,68 @@ class AlpicoolConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=data_schema,
             errors=errors,
+        )
+
+
+class AlpicoolOptionsFlow(OptionsFlow):
+    """Handle options for the Alpicool BLE integration."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            # Strip empty strings so unset sensors don't store ""
+            cleaned = {
+                k: v
+                for k, v in user_input.items()
+                if v not in (None, "")
+            }
+            return self.async_create_entry(title="", data=cleaned)
+
+        current = self.config_entry.options
+        temp_sensor_selector = selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                domain="sensor",
+                device_class="temperature",
+            )
+        )
+
+        schema_dict: dict[Any, Any] = {
+            vol.Optional(
+                CONF_LEFT_ZONE_NAME,
+                default=current.get(CONF_LEFT_ZONE_NAME, DEFAULT_LEFT_ZONE_NAME),
+            ): str,
+            vol.Optional(
+                CONF_LEFT_EXTERNAL_TEMP_SENSOR,
+                default=current.get(CONF_LEFT_EXTERNAL_TEMP_SENSOR, ""),
+            ): temp_sensor_selector,
+        }
+
+        # Only show the right-zone fields if this is a dual-zone fridge
+        if self.config_entry.data.get(CONF_DUAL_ZONE_MODES, False) or "right_current" in (
+            getattr(self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id), "status", {}) or {}
+        ):
+            schema_dict[
+                vol.Optional(
+                    CONF_RIGHT_ZONE_NAME,
+                    default=current.get(
+                        CONF_RIGHT_ZONE_NAME, DEFAULT_RIGHT_ZONE_NAME
+                    ),
+                )
+            ] = str
+            schema_dict[
+                vol.Optional(
+                    CONF_RIGHT_EXTERNAL_TEMP_SENSOR,
+                    default=current.get(CONF_RIGHT_EXTERNAL_TEMP_SENSOR, ""),
+                )
+            ] = temp_sensor_selector
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(schema_dict),
         )

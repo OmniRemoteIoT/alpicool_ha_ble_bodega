@@ -9,6 +9,13 @@ FRIDGE_NOTIFY_UUID = "00001236-0000-1000-8000-00805f9b34fb"
 
 # --- Configuration Options ---
 CONF_DUAL_ZONE_MODES = "dual_zone_modes"
+CONF_LEFT_ZONE_NAME = "left_zone_name"
+CONF_RIGHT_ZONE_NAME = "right_zone_name"
+CONF_LEFT_EXTERNAL_TEMP_SENSOR = "left_external_temp_sensor"
+CONF_RIGHT_EXTERNAL_TEMP_SENSOR = "right_external_temp_sensor"
+
+DEFAULT_LEFT_ZONE_NAME = "Left"
+DEFAULT_RIGHT_ZONE_NAME = "Right"
 
 # --- Presets ---
 PRESET_ECO = "Eco"
