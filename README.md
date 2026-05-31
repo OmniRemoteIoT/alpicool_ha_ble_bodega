@@ -9,15 +9,14 @@ This component was inspired by the prior work done by klightspeed's [BrassMonkey
 ***
 ## About this fork
 
-This is a fork of [`Gruni22/alpicool_ha_ble`](https://github.com/Gruni22/alpicool_ha_ble), extended to work cleanly on a **Bodega**-branded RV fridge that shares the underlying Alpicool BLE protocol. Bodega is one of several rebadges of the same OEM platform (others include BougeRV, Euhomy, Setpower, JoyTutus), so these changes apply broadly to fridges in that family. All credit for the original integration goes to upstream — full upstream functionality is preserved.
+This is a fork of [`Gruni22/alpicool_ha_ble`](https://github.com/Gruni22/alpicool_ha_ble), created to get a **Bodega**-branded RV fridge working cleanly. Bodega shares the same underlying Alpicool BLE protocol (it's one of several rebadges of the same OEM platform, alongside BougeRV, Euhomy, Setpower, JoyTutus), and **the upstream integration was already solid** — the vast majority of the code is unchanged and all credit for it goes to upstream. Supporting the Bodega only required two targeted fixes:
+
+1. **Correct temperatures in °F mode.** The BLE status payload reports temperatures in whatever unit the fridge panel is currently set to, and byte 9 is the unit flag (`0` = °C, `1` = °F). Upstream decoded that flag but never acted on it, so a fridge in °F mode reported wrong values (raw `4`°F was published as `4`°C and displayed as `39`°F). The climate entity now exposes its temperature unit, min, and max dynamically from the device, letting Home Assistant handle any display conversion natively with no round-trip precision loss.
+2. **Editable Left/Right zone names.** Rename the Left/Right zones to anything meaningful for your fridge (e.g. Refrigerator/Freezer, Top/Bottom) via the options dialog.
 
 Tested on a **Bodega 83L dual-zone** fridge/freezer (`PSP-CR65-AK` main board).
 
-What this fork adds on top of upstream:
-
-* **Correct temperatures in °F mode (bugfix).** The BLE status payload reports temperatures in whatever unit the fridge panel is currently set to, and byte 9 is the unit flag (`0` = °C, `1` = °F). Upstream decoded that flag but never acted on it, so a fridge in °F mode reported wrong values (raw `4`°F was published as `4`°C and displayed as `39`°F). The climate entity now exposes its temperature unit, min, and max dynamically from the device, letting Home Assistant handle any display conversion natively with no round-trip precision loss.
-* **Configurable zone names.** Rename the Left/Right zones to anything meaningful (e.g. Refrigerator/Freezer, Top/Bottom).
-* **External temperature sensors per zone.** Feed each zone's `current_temperature` from any HA temperature sensor (Ruuvi, Govee, etc.) instead of the fridge's internal NTC.
+While in the options flow, one extra convenience was added: **external temperature sensors per zone** — feed each zone's `current_temperature` from any HA temperature sensor (Ruuvi, Govee, etc.) instead of the fridge's internal NTC. This is optional and off by default.
 
 See [Fork Options](#fork-options-zone-names--external-sensors) below for usage.
 
