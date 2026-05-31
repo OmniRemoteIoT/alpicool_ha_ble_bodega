@@ -47,13 +47,44 @@ class AlpicoolClimateZone(AlpicoolEntity, ClimateEntity):
     """Representation of an Alpicool refrigerator zone."""
 
     _attr_hvac_modes = [HVACMode.COOL, HVACMode.OFF]
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_step = 1.0
-    _attr_min_temp = -20
-    _attr_max_temp = 20
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE
     )
+
+    @property
+    def temperature_unit(self) -> str:
+        """Return the temperature unit the device is currently configured for.
+
+        The fridge's BLE protocol reports temperatures in whatever unit the
+        device's panel is set to (°C or °F). Byte 9 of the status payload
+        is the unit flag: 0 = Celsius, 1 = Fahrenheit. Reporting this
+        dynamically lets Home Assistant handle any display conversion
+        without round-trip precision loss.
+        """
+        return (
+            UnitOfTemperature.FAHRENHEIT
+            if self.api.status.get("unit") == 1
+            else UnitOfTemperature.CELSIUS
+        )
+
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum settable temperature, in the device's native unit."""
+        val = self.api.status.get("temp_min")
+        if val is not None:
+            return float(val)
+        # Fallback if status not yet populated
+        return -4.0 if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else -20.0
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum settable temperature, in the device's native unit."""
+        val = self.api.status.get("temp_max")
+        if val is not None:
+            return float(val)
+        # Fallback if status not yet populated
+        return 68.0 if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else 20.0
 
     def __init__(self, entry: ConfigEntry, api: FridgeApi, zone: str) -> None:
         """Initialize the climate entity for a specific zone."""

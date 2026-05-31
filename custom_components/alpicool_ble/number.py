@@ -22,6 +22,7 @@ NUMBERS = {
         "step": 1,
         "mode": NumberMode.SLIDER,
         "unit": "°C",
+        "unit_follows_device": True,
     },
     "start_delay": {
         "name": "Start Delay",
@@ -68,7 +69,18 @@ class AlpicoolNumber(AlpicoolEntity, NumberEntity):
         self._attr_native_max_value = self._number_def["max"]
         self._attr_native_step = self._number_def["step"]
         self._attr_mode = self._number_def["mode"]
-        self._attr_native_unit_of_measurement = self._number_def.get("unit")
+        # Only set static unit if it doesn't need to follow the device.
+        # Temperature-bearing numbers expose unit_of_measurement as a property
+        # so it can flip between °C and °F based on the fridge's current mode.
+        if not self._number_def.get("unit_follows_device"):
+            self._attr_native_unit_of_measurement = self._number_def.get("unit")
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement, following the device's °C/°F setting if applicable."""
+        if self._number_def.get("unit_follows_device"):
+            return "°F" if self.api.status.get("unit") == 1 else "°C"
+        return self._number_def.get("unit")
 
     @property
     def native_value(self) -> float | None:
