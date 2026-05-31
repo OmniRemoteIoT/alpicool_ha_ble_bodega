@@ -49,7 +49,7 @@ This integration supports !!!untested!!! **both single and dual-zone fridges**.
 Easiest install is via [HACS](https://hacs.xyz/):
 
 ### Method 1: HACS (Recommended)
-1.  [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Gruni22&repository=alpicool_ha_ble&category=integration)
+1.  [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OmniRemoteIoT&repository=alpicool_ha_ble_bodega&category=integration)
 4.  Search for "Alpicool BLE" and click "Install".
 5.  Restart Home Assistant.
 
